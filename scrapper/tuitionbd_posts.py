@@ -4,10 +4,10 @@
 """
 About the Script:
     * This script extracts necessary data from tuition post details
-    * Also extracts necessary data of the teachers
 """
 
-from pprint import pprint
+import datetime
+import json
 
 import requests
 from bs4 import BeautifulSoup
@@ -15,12 +15,16 @@ from bs4 import BeautifulSoup
 
 class TuitionDetailsInfo:
     def __init__(self):
-        # self.all_tuition_url = all_tuition_url
         self.all_tuition_url = 'http://bdtutors.com/all_tuitions.html'
         self.tuition_detail_links = []
-        self.info = {}
 
     def get_html_text(self, url):
+        """
+        Get the HTML text of page of given `url`
+
+        :param url: link of a web page
+        :return: HTML text of page
+        """
         page = requests.get(url)
         page = page.text
         return page
@@ -46,11 +50,14 @@ class TuitionDetailsInfo:
     def get_kv(self, element, sep):
         k, v = element.split(sep)
         return k.strip(), v.strip()
-        # k, v = k.strip(), v.strip()
-        # self.info[k.replace(' ', '_')] = v
 
     def get_single_post_details(self, tuition_post_page):
-        # tuition_post_page = self.get_html_text('http://bdtutors.com/' + url)
+        """
+        Get relevant information from `tuition_post_page` HTML text
+        :param tuition_post_page: HTML text of page
+        :return: tuition post information
+        """
+        info = {}
         soup = BeautifulSoup(tuition_post_page, 'html.parser')
         element = soup.find_all('div', {'class': 'c8'})[0]
         element = element.find_all('div', {'class': 'row'})
@@ -60,37 +67,36 @@ class TuitionDetailsInfo:
         emt = emt.replace('\r\n\t', '')
         k, v = emt.split('#')
         k, v = k.strip(), v.strip()
-        self.info[k.replace(' ', '_')] = v
+        info[k.replace(' ', '_')] = v
 
         emt = element[1].text
         emt = emt.strip().replace('\n', '').replace('\r', ' ')
-        # print(emt)
-        self.info['description'] = emt
+        info['description'] = emt
 
-        self.info['details'] = {}
+        info['details'] = {}
 
         for i in range(2, 6):
             emts = element[i]
             emts = emts.find_all('div', {'class': 'c6'})
-            # pprint(emts)
             emt1, emt2 = emts[0].text, emts[1].text
-            # print(emt1, emt2)
-            # print('-' * 20)
             k, v = self.get_kv(emt1, ':')
-            self.info['details'][k.replace(' ', '_')] = v
+            info['details'][k.replace(' ', '_')] = v
             k, v = self.get_kv(emt2, ':')
-            self.info['details'][k.replace(' ', '_')] = v
+            info['details'][k.replace(' ', '_')] = v
         emt = element[6]
-        # print('emt:', emt)
         emt = emt.find_all('div', {'class': 'c6'})[1]
         emt = emt.text
         k, v = self.get_kv(emt, ':')
-        self.info['details'][k.replace(' ', '_')] = v
+        info['details'][k.replace(' ', '_')] = v
 
-        pprint(self.info)
-        return self.info
+        return info
 
     def aggregate_pages(self, url_list):
+        """
+        Aggregate a list of pages from a list of urls
+        :param url_list: a list of urls which HTML will be aggregated
+        :return: list of HTML page text
+        """
         html_pages = []
         for url in url_list:
             page = self.get_html_text('http://bdtutors.com/' + url)
@@ -98,48 +104,26 @@ class TuitionDetailsInfo:
         return html_pages
 
     def get_tuition_post_details(self):
+        """
+        Aggregates the relevant tuition post info for `current day`
+        :return: a dict containing tuition post info for `current day`
+        """
         tuition_details_link = self.extract_tuition_details_urls()
-        pprint(tuition_details_link)
         all_details_page = self.aggregate_pages(tuition_details_link)
         info_list = []
         for page in all_details_page:
             info = self.get_single_post_details(page)
             info_list.append(info)
-        return info_list
+        return {
+            'date': str(datetime.datetime.now().date()),
+            'all_post': info_list
+        }
+
+    def dump_into_json(self):
+        data = self.get_tuition_post_details()
+        with open('tuition_post_' + str(datetime.datetime.now().date()) + '.json', 'w') as file:
+            json.dump(data, file, indent=4)
 
 
 if __name__ == '__main__':
-    info_of_today = TuitionDetailsInfo().get_tuition_post_details()
-    # pprint(info_of_today)
-    # print(len(info_of_today))
-    d = {
-        'all_info': info_of_today
-    }
-    import json
-
-    with open('today.json', 'w') as file:
-        json.dump(d, file, indent=4)
-
-"""
-http://bdtutors.com/all_tuitions.html
-
-['index.php?cms=tuitiondetails&id=2092019100925',
- 'index.php?cms=tuitiondetails&id=2042019054058',
- 'index.php?cms=tuitiondetails&id=2032019102130',
- 'index.php?cms=tuitiondetails&id=2042019082326',
- 'index.php?cms=tuitiondetails&id=2082019081854',
- 'index.php?cms=tuitiondetails&id=2032019124159',
- 'index.php?cms=tuitiondetails&id=2062019090918',
- 'index.php?cms=tuitiondetails&id=2102019102804',
- 'index.php?cms=tuitiondetails&id=2092019062206',
- 'index.php?cms=tuitiondetails&id=2092019055304',
- 'index.php?cms=tuitiondetails&id=1302019090259',
- 'index.php?cms=tuitiondetails&id=2052019084653',
- 'index.php?cms=tuitiondetails&id=2102019121017',
- 'index.php?cms=tuitiondetails&id=2042019053511',
- 'index.php?cms=tuitiondetails&id=2032019104835',
- 'index.php?cms=tuitiondetails&id=2042019103447',
- 'index.php?cms=tuitiondetails&id=2052019120941',
- 'index.php?cms=tuitiondetails&id=2102019083410',
- 'index.php?cms=tuitiondetails&id=2012019093551']
-"""
+    TuitionDetailsInfo().dump_into_json()
