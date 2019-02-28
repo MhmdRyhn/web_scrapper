@@ -34,10 +34,33 @@ class TutorInformation:
         soup = BeautifulSoup(page, 'html.parser')
         div_class_c8 = soup.find_all(name='div', class_='c8')[1]
 
-        # div_class_row = div_class_c8.find_all(name='div', class_='row')[0]
-        # tutor_name = div_class_row.find_all(name='h6')[0].text
         necessary = div_class_c8.find_all(name='strong')
         pprint(necessary)
+
+        # Name, Experience, Qualification, Phone
+        for index in [0, 3, 4, 8]:
+            tag = necessary[index]
+            key = 'Name'
+            if index:
+                key = self.clean_data(self.nth_next_element(tag, 1))
+            data = self.nth_next_element(tag, 2)
+            overview[self.clean_data(key)] = self.clean_data(data)
+
+        # Area covered, Subjects
+        for index in [5, 7]:
+            tag = necessary[index]
+            key1 = self.clean_data(self.nth_next_element(tag, 1))
+            nxt = 4
+            if index == 5:
+                nxt = 7
+            details = self.nth_next_element(tag, nxt)
+            details = list(map(self.clean_data, details.split(',')))
+            if index == 5:
+                key2 = self.nth_next_element(tag, 4)
+                overview[key1] = {}
+                overview[key1][key2] = details
+            else:
+                overview[key1] = details
 
         # # Name
         # name = necessary[0]
@@ -60,76 +83,27 @@ class TutorInformation:
         # phone = self.nth_next_element(phone, 2)
         # overview['phone'] = self.clean_data(phone)
 
-        for index in [0, 3, 4, 8]:
-            tag = necessary[index]
-            key = 'Name'
-            if index:
-                key = self.clean_data(self.nth_next_element(tag, 1))
-            data = self.nth_next_element(tag, 2)
-            overview[self.clean_data(key)] = self.clean_data(data)
-
-        # Area Covered
-        area = necessary[5]
-        key = self.clean_data(self.nth_next_element(area, 1))
-        area_name = self.nth_next_element(area, 4)
-        area_details = self.nth_next_element(area, 7)
-        area_details = list(map(self.clean_data, area_details.split(',')))
-        overview[key] = {}
-        overview[key][area_name] = area_details
-
-        # Subjects
-        subjects = necessary[7]
-        key = self.clean_data(self.nth_next_element(subjects, 1))
-        subjects = self.nth_next_element(subjects, 4)
-        subjects = list(map(self.clean_data, subjects.split(',')))
-        overview[key] = subjects
+        # # Area Covered
+        # area = necessary[5]
+        # key = self.clean_data(self.nth_next_element(area, 1))
+        # area_name = self.nth_next_element(area, 4)
+        # area_details = self.nth_next_element(area, 7)
+        # area_details = list(map(self.clean_data, area_details.split(',')))
+        # overview[key] = {}
+        # overview[key][area_name] = area_details
+        #
+        # # Subjects
+        # subjects = necessary[7]
+        # key = self.clean_data(self.nth_next_element(subjects, 1))
+        # subjects = self.nth_next_element(subjects, 4)
+        # subjects = list(map(self.clean_data, subjects.split(',')))
+        # overview[key] = subjects
 
         pprint(overview)
-
-        # print('*'*70)
-        # aa = div_class_c8.find_all(name='strong', text='Area Covered:')[0]
-        # # print(aa)
-        # print(aa.next_element)
-        # print(aa.next_element.next_element.next_element.next_element)
-        # print(aa.next_element.next_element.next_element.next_element.next_element)
-        # print('--------------')
-        # print(self.nth_next_element(aa, 1))
-        # print(self.nth_next_element(aa, 4))
-        # print(self.nth_next_element(aa, 5))
-        # print('-'*50)
-        #
-        # ff = div_class_c8.find_all(name='strong', text='Experience: ')[0]
-        # print(self.nth_next_element(ff, 1))
-        # print(self.nth_next_element(ff, 2))
 
     def tutor_details(self):
         page = self.get_html_text()
         self.tutor_overview(page)
-
-
-def chrome():
-    from selenium import webdriver
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.webdriver.common.by import By
-    from selenium.common.exceptions import TimeoutException
-
-    options = webdriver.ChromeOptions()
-    driver = webdriver.Chrome('/media/rayhan/Software/LX-SW/chromedriver')
-    driver.get('http://bdtutors.com/Search_Tutors.html')
-    # driver
-    # driver.find_element_by_link_text('SEARCH TUTORS').parent.
-    # driver.find_element_by_link_text('Search Tutors').click()
-    # driver.find_element_by_xpath("//button[@id='searchtut']").click()
-    driver.find_element_by_id('searchtut').click()
-    driver.find_element_by_id('viewdd').click()
-
-    # driver.find_element_by_xpath("//button[@id='viewdd']").click()
-    print(driver.page_source)
-    # import urllib.request as ur
-    # src = ur.urlopen("http://bdtutors.com/tutor_search_result.html")
-    # return src
-    # soup = BeautifulSoup(src, 'html.parser')
 
 
 if __name__ == '__main__':
