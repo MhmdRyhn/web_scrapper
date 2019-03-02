@@ -1,14 +1,15 @@
-from bs4 import BeautifulSoup
-import requests
 from pprint import pprint
-from selenium import webdriver
+
+import requests
+from bs4 import BeautifulSoup
 
 
 class TutorInformation:
     def __init__(self):
         # self.tutor_url = 'http://bdtutors.com/tutor/21925139.html'
-        self.tutor_url = 'http://bdtutors.com/tutor/21924544.html'
-        # self.tutor_url = 'http://bdtutors.com/tutor/21924549.html'
+        # self.tutor_url = 'http://bdtutors.com/tutor/21924544.html'
+        self.tutor_url = 'http://bdtutors.com/tutor/21924549.html'
+        # self.tutor_url = 'http://bdtutors.com/tutor/11923931.html'
         self.tutor_info_details = {}
 
     def get_html_text(self):
@@ -23,19 +24,33 @@ class TutorInformation:
         return page
 
     def nth_next_element(self, element, n):
-        for i in range(n):
+        """
+            ** Takes an element and a value as input
+            ** Returns: nth next element of the input element
+        """
+        for _ in range(n):
             element = element.next_element
         return element
 
     def get_protected_email(self, cfemail):
+        """
+            ** Retrieve e-mail from the protected state
+        """
         encoded_bytes = bytes.fromhex(cfemail)
         email = bytes(byte ^ encoded_bytes[0] for byte in encoded_bytes[1:]).decode('utf8')
         return email
 
     def clean_data(self, data):
-        return data.replace('\'', '').strip().rstrip()
+        """
+            *** Removes unnecessary leading and trailing whitespaces
+        """
+        return data.replace('\'', '').replace('\r', '').replace('\n', '').strip().rstrip()
 
     def tutor_overview(self, page):
+        """
+            ** Takes the page's HTML text as input
+            ** Returns the overview of `Tutor`
+        """
         overview = {}
         soup = BeautifulSoup(page, 'html.parser')
 
@@ -45,7 +60,6 @@ class TutorInformation:
 
         div_class_c8 = soup.find_all(name='div', class_='c8')[1]
         necessary = div_class_c8.find_all(name='strong')
-        # pprint(necessary)
 
         # Name, Experience, Qualification, Phone, Email
         for index in [0, 3, 4, 8, 9]:
@@ -56,7 +70,7 @@ class TutorInformation:
             if key == 'Email:':
                 data = self.nth_next_element(tag, 3)
                 cfemail = data.__dict__['attrs'].get('data-cfemail')
-                data = self.get_protected_email(cfemail)
+                data = self.get_protected_email(cfemail) if cfemail else ''
             else:
                 data = self.nth_next_element(tag, 2)
             overview[self.clean_data(key)] = self.clean_data(data)
@@ -79,13 +93,14 @@ class TutorInformation:
         return overview
 
     def tuition_info(self, page):
+        """
+            ** Takes the page's HTML text as input
+            ** Returns tuition info of `Tutor`
+        """
         soup = BeautifulSoup(page, 'html.parser')
         expected = soup.find_all('div', class_='style_border_p')[0]
         c3_class = expected.find_all('div', class_='c3')
         c9_class = expected.find_all('div', class_='c9')
-        # pprint(c3_class)
-        # print('*'*60)
-        # pprint(c9_class)
 
         min_len = min(len(c3_class), len(c9_class))
         info = {}
@@ -93,8 +108,10 @@ class TutorInformation:
         for i in range(min_len):
             key = self.clean_data(c3_class[i].text)
             if i < 3:
+                # First 3 rows have single value
                 value = self.clean_data(c9_class[i].text)
             else:
+                # Last 7 rows can have multiple value
                 checkbox = c9_class[i].find_all('input')
                 value = [self.clean_data(self.nth_next_element(k, 1)) for k in checkbox]
             info[key] = value
@@ -112,18 +129,6 @@ class TutorInformation:
             second_half = whole_row[1]
             f3 = first_half.find_all('div')
             s3 = second_half.find_all('div')
-            # print(s3)
-
-            # print(self.clean_data(f3[0].text))
-            # for k in [0, 1, 2]:
-            #     print(self.clean_data(f3[k].text))
-            #     print('----')
-
-            # a = s3[0].next_element + s3[0].next_element.next_element.next_element
-            # print(self.clean_data(a))
-            # for k in [1, 2]:
-            #     print(self.clean_data(s3[k].text))
-            #     print('----')
 
             school['Exam'] = self.clean_data(f3[0].text)
             school['Subject / Group'] = self.clean_data(f3[1].text)
