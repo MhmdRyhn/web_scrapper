@@ -1,3 +1,4 @@
+import json
 from pprint import pprint
 
 import requests
@@ -6,11 +7,12 @@ from bs4 import BeautifulSoup
 
 class TutorInformation:
     def __init__(self):
-        # self.tutor_url = 'http://bdtutors.com/tutor/21925139.html'
+        self.tutor_url = 'http://bdtutors.com/tutor/21925139.html'
         # self.tutor_url = 'http://bdtutors.com/tutor/21924544.html'
-        self.tutor_url = 'http://bdtutors.com/tutor/21924549.html'
+        # self.tutor_url = 'http://bdtutors.com/tutor/21924549.html'
         # self.tutor_url = 'http://bdtutors.com/tutor/11923931.html'
         self.tutor_info_details = {}
+        self.tutor_id = '_'
 
     def get_html_text(self):
         """
@@ -44,7 +46,7 @@ class TutorInformation:
         """
             *** Removes unnecessary leading and trailing whitespaces
         """
-        return data.replace('\'', '').replace('\r', '').replace('\n', '').strip().rstrip()
+        return data.replace('\'', '').replace('\r', '').replace('\n', ' ').strip().rstrip()
 
     def tutor_overview(self, page):
         """
@@ -60,6 +62,8 @@ class TutorInformation:
 
         div_class_c8 = soup.find_all(name='div', class_='c8')[1]
         necessary = div_class_c8.find_all(name='strong')
+
+        self.tutor_id = necessary[2].text
 
         # Name, Experience, Qualification, Phone, Email
         for index in [0, 3, 4, 8, 9]:
@@ -133,7 +137,7 @@ class TutorInformation:
             school['Exam'] = self.clean_data(f3[0].text)
             school['Subject / Group'] = self.clean_data(f3[1].text)
             school['Institute'] = self.clean_data(f3[2].text)
-            school['Result'] = self.clean_data(self.nth_next_element(s3[0], 1)) + \
+            school['Result'] = self.clean_data(self.nth_next_element(s3[0], 1)) + ' ' + \
                                self.clean_data(self.nth_next_element(s3[0], 3))
             school['Passing Year'] = self.clean_data(s3[1].text)
             school['Awards'] = self.clean_data(s3[2].text)
@@ -152,7 +156,13 @@ class TutorInformation:
             'education': education
         }
 
+    def dump_into_json(self):
+        data = self.tutor_details()
+        with open('tutor_' + str(self.tutor_id) + '.json', 'w') as file:
+            json.dump(data, file, indent=4)
+
 
 if __name__ == '__main__':
-    obj = TutorInformation()
-    pprint(obj.tutor_details())
+    tutor_info = TutorInformation()
+    tutor_info.dump_into_json()
+    # pprint(tutor_info.tutor_details())
